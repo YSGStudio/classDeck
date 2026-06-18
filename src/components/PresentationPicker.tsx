@@ -5,7 +5,7 @@ import { Student, StudentGender } from "@/lib/types";
 
 type GenderFilter = "random" | StudentGender;
 
-const GENDER_LABELS: Record<StudentGender, string> = { male: "남", female: "녀" };
+const GENDER_LABELS: Record<StudentGender, string> = { male: "남", female: "여" };
 
 function pickRandom(pool: Student[], count: number): Student[] {
   const shuffled = pool.slice();
@@ -71,7 +71,7 @@ export function PresentationPicker({
               >
                 <option value="random">랜덤</option>
                 <option value="male">남</option>
-                <option value="female">녀</option>
+                <option value="female">여</option>
               </select>
               <select
                 value={effectiveCount}

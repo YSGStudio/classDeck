@@ -5,7 +5,7 @@ import { useDirectory } from "@/context/DirectoryContext";
 import { generateStudentId, readStudents, writeStudents } from "@/lib/students";
 import { Student, StudentGender } from "@/lib/types";
 
-const GENDER_LABELS: Record<StudentGender, string> = { male: "남", female: "녀" };
+const GENDER_LABELS: Record<StudentGender, string> = { male: "남", female: "여" };
 
 function sortByNumber(students: Student[]): Student[] {
   return students.slice().sort((a, b) => a.number - b.number);
@@ -80,7 +80,7 @@ export function StudentRosterEditor() {
           className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
         >
           <option value="male">남</option>
-          <option value="female">녀</option>
+          <option value="female">여</option>
         </select>
         <button
           onClick={handleAdd}

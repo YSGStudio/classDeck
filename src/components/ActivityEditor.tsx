@@ -130,7 +130,8 @@ export function ActivityEditor({
               ⠿
             </span>
             <span className={`rounded px-2 py-0.5 text-xs font-medium ${ACTIVITY_KIND_BADGE_STYLES[activity.kind]}`}>
-              {ACTIVITY_KIND_LABELS[activity.kind]} {kindIndex(activities, index)}
+              {ACTIVITY_KIND_LABELS[activity.kind]}
+              {kindIndex(activities, index)}
             </span>
             <input
               value={activity.title}
