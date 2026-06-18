@@ -8,6 +8,9 @@ import { useDirectory } from "@/context/DirectoryContext";
 import { buildLessonId, readLesson, writeLesson } from "@/lib/fsLessons";
 import { createEmptyLesson } from "@/lib/types";
 
+const SUBJECT_OPTIONS = ["국어", "영어", "수학", "사회", "과학", "음악", "미술", "체육", "실과", "창체", "도덕"];
+const GRADE_OPTIONS = ["1학년", "2학년", "3학년", "4학년", "5학년", "6학년"];
+
 function NewLessonForm() {
   const { directoryHandle } = useDirectory();
   const router = useRouter();
@@ -72,23 +75,33 @@ function NewLessonForm() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700">과목</label>
-            <input
-              type="text"
+            <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="예: 과학"
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-            />
+            >
+              <option value="">선택</option>
+              {SUBJECT_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700">학년</label>
-            <input
-              type="text"
+            <select
               value={grade}
               onChange={(e) => setGrade(e.target.value)}
-              placeholder="예: 6학년"
               className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-            />
+            >
+              <option value="">선택</option>
+              {GRADE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
