@@ -52,6 +52,7 @@ export interface LessonSummary {
   title: string;
   subject: string;
   grade: string;
+  achievementStandard: string;
 }
 
 /** Fills in fields missing from lesson files saved by older versions of the app. */

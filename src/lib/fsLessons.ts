@@ -38,6 +38,7 @@ export async function listLessons(root: FileSystemDirectoryHandle): Promise<Less
         title: lesson.title,
         subject: lesson.subject,
         grade: lesson.grade,
+        achievementStandard: lesson.achievementStandard ?? "",
       });
     } catch {
       // skip unreadable/corrupt lesson files

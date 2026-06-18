@@ -10,12 +10,27 @@ import { MonthCalendar } from "@/components/MonthCalendar";
 import { LessonSummary } from "@/lib/types";
 import { buildLessonId, deleteLesson, listLessons, readLesson, writeLesson } from "@/lib/fsLessons";
 
+function LessonRow({ lesson, actions }: { lesson: LessonSummary; actions: React.ReactNode }) {
+  return (
+    <li className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3">
+      <Link href={`/lessons/${encodeURIComponent(lesson.id)}`} className="flex-1 min-w-0">
+        <p className="truncate text-sm font-medium text-slate-900">{lesson.title}</p>
+        <p className="mt-0.5 text-xs text-slate-500">
+          {lesson.lessonDate} · {lesson.subject || "과목 없음"} · {lesson.grade || "학년 없음"}
+        </p>
+      </Link>
+      <div className="flex items-center gap-1 text-xs">{actions}</div>
+    </li>
+  );
+}
+
 function Dashboard() {
   const { directoryHandle } = useDirectory();
   const router = useRouter();
   const [lessons, setLessons] = useState<LessonSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const refresh = useCallback(async () => {
     if (!directoryHandle) return;
@@ -34,25 +49,42 @@ function Dashboard() {
   const datesWithLessons = useMemo(() => new Set(lessons.map((l) => l.lessonDate)), [lessons]);
   const visibleLessons = selectedDate ? lessons.filter((l) => l.lessonDate === selectedDate) : lessons;
 
-  async function handleDuplicate(id: string) {
+  const searchResults = useMemo(() => {
+    const q = searchQuery.trim();
+    if (!q) return [];
+    return lessons.filter((l) => l.title.includes(q) || l.achievementStandard.includes(q));
+  }, [lessons, searchQuery]);
+
+  async function copyLessonToDate(id: string, lessonDate: string, suffix: string) {
     if (!directoryHandle) return;
     const original = await readLesson(directoryHandle, id);
     if (!original) return;
-    const today = new Date().toISOString().slice(0, 10);
-    const newTitle = `${original.title} (복제)`;
-    const newId = buildLessonId(today, original.subject, newTitle);
+    const newTitle = `${original.title} ${suffix}`;
+    const newId = buildLessonId(lessonDate, original.subject, newTitle);
     const now = new Date().toISOString();
     await writeLesson(directoryHandle, {
       ...original,
       id: newId,
-      lessonDate: today,
+      lessonDate,
       title: newTitle,
       feedback: "",
       createdAt: now,
       updatedAt: now,
     });
     await refresh();
-    router.push(`/lessons/${encodeURIComponent(newId)}`);
+    return newId;
+  }
+
+  async function handleDuplicate(id: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    const newId = await copyLessonToDate(id, today, "(복제)");
+    if (newId) router.push(`/lessons/${encodeURIComponent(newId)}`);
+  }
+
+  async function handleCopyToToday(id: string) {
+    const today = new Date().toISOString().slice(0, 10);
+    await copyLessonToDate(id, today, "(복사)");
+    setSelectedDate(today);
   }
 
   async function handleDelete(id: string) {
@@ -75,11 +107,45 @@ function Dashboard() {
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-[280px_1fr]">
-        <MonthCalendar
-          datesWithLessons={datesWithLessons}
-          selectedDate={selectedDate}
-          onSelectDate={setSelectedDate}
-        />
+        <div className="space-y-4">
+          <MonthCalendar
+            datesWithLessons={datesWithLessons}
+            selectedDate={selectedDate}
+            onSelectDate={setSelectedDate}
+          />
+
+          <div className="rounded-lg border border-slate-200 bg-white p-4">
+            <h2 className="mb-2 text-sm font-semibold text-slate-900">수업 찾기</h2>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="제목 또는 성취기준으로 검색"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+            />
+            {searchQuery.trim() && (
+              <ul className="mt-3 space-y-2">
+                {searchResults.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-slate-400">검색 결과가 없습니다.</p>
+                ) : (
+                  searchResults.map((lesson) => (
+                    <LessonRow
+                      key={lesson.id}
+                      lesson={lesson}
+                      actions={
+                        <button
+                          onClick={() => handleCopyToToday(lesson.id)}
+                          className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200"
+                        >
+                          복사
+                        </button>
+                      }
+                    />
+                  ))
+                )}
+              </ul>
+            )}
+          </div>
+        </div>
 
         <div>
           {selectedDate && (
@@ -101,37 +167,32 @@ function Dashboard() {
           ) : (
             <ul className="space-y-2">
               {visibleLessons.map((lesson) => (
-                <li
+                <LessonRow
                   key={lesson.id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3"
-                >
-                  <Link href={`/lessons/${encodeURIComponent(lesson.id)}`} className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900">{lesson.title}</p>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                      {lesson.lessonDate} · {lesson.subject || "과목 없음"} · {lesson.grade || "학년 없음"}
-                    </p>
-                  </Link>
-                  <div className="flex items-center gap-1 text-xs">
-                    <Link
-                      href={`/lessons/${encodeURIComponent(lesson.id)}/present`}
-                      className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200"
-                    >
-                      발표
-                    </Link>
-                    <button
-                      onClick={() => handleDuplicate(lesson.id)}
-                      className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200"
-                    >
-                      복제
-                    </button>
-                    <button
-                      onClick={() => handleDelete(lesson.id)}
-                      className="rounded px-2 py-1 text-red-500 hover:bg-red-100"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </li>
+                  lesson={lesson}
+                  actions={
+                    <>
+                      <Link
+                        href={`/lessons/${encodeURIComponent(lesson.id)}/present`}
+                        className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200"
+                      >
+                        발표
+                      </Link>
+                      <button
+                        onClick={() => handleDuplicate(lesson.id)}
+                        className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200"
+                      >
+                        복제
+                      </button>
+                      <button
+                        onClick={() => handleDelete(lesson.id)}
+                        className="rounded px-2 py-1 text-red-500 hover:bg-red-100"
+                      >
+                        삭제
+                      </button>
+                    </>
+                  }
+                />
               ))}
             </ul>
           )}
