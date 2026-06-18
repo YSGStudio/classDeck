@@ -44,3 +44,4 @@ next-env.d.ts
 # folder; if that folder happens to be the repo root, never commit it).
 /lessons/
 /materials/
+/students.json

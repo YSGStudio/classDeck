@@ -109,10 +109,6 @@ function LessonEditor({ id }: { id: string }) {
           />
         </Section>
 
-        <Section title="채점기준 (루브릭)">
-          <RubricEditor rubrics={lesson.rubrics} onChange={(rubrics) => update("rubrics", rubrics)} />
-        </Section>
-
         <Section title="도달목표">
           <textarea
             value={lesson.goal}
@@ -131,6 +127,10 @@ function LessonEditor({ id }: { id: string }) {
             placeholder="학생 수행 과제를 입력하세요."
             className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
           />
+        </Section>
+
+        <Section title="채점기준 (루브릭)">
+          <RubricEditor rubrics={lesson.rubrics} onChange={(rubrics) => update("rubrics", rubrics)} />
         </Section>
 
         <Section title="활동">

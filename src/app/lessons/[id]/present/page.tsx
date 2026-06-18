@@ -6,18 +6,21 @@ import { AppHeader } from "@/components/AppHeader";
 import { DirectoryGate } from "@/components/DirectoryGate";
 import { useDirectory } from "@/context/DirectoryContext";
 import { readLesson, readMaterialFile } from "@/lib/fsLessons";
-import { Lesson, Material } from "@/lib/types";
+import { readStudents } from "@/lib/students";
+import { Lesson, Material, Student } from "@/lib/types";
 import { ACTIVITY_KIND_LABELS } from "@/lib/activityKinds";
 import { buildSlides } from "@/lib/presentSlides";
 import { ACCENT_CLASSES, getAccentKey } from "@/lib/presentTheme";
 import { ActivityTimer } from "@/components/ActivityTimer";
 import { QrOverlay } from "@/components/QrOverlay";
 import { MaterialCard } from "@/components/MaterialCard";
+import { PresentationPicker } from "@/components/PresentationPicker";
 import "./present.css";
 
 function PresentationView({ id }: { id: string }) {
   const { directoryHandle } = useDirectory();
   const [lesson, setLesson] = useState<Lesson | null>(null);
+  const [students, setStudents] = useState<Student[]>([]);
   const [index, setIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -26,6 +29,7 @@ function PresentationView({ id }: { id: string }) {
   useEffect(() => {
     if (!directoryHandle) return;
     readLesson(directoryHandle, id).then(setLesson);
+    readStudents(directoryHandle).then(setStudents);
   }, [directoryHandle, id]);
 
   const slides = useMemo(() => (lesson ? buildSlides(lesson) : []), [lesson]);
@@ -154,15 +158,17 @@ function PresentationView({ id }: { id: string }) {
       )}
 
       <div className="relative z-10 flex flex-1 items-start justify-start px-12 py-12">
-        {slide === "activity" && currentActivity && (
-          <div key={`timer-${index}`} className="absolute right-8 top-8 z-20">
+        <div className="absolute right-8 top-8 z-20 flex flex-col items-end gap-3">
+          {slide === "activity" && currentActivity && (
             <ActivityTimer
+              key={`timer-${index}`}
               initialMinutes={currentActivity.durationMinutes}
               accentBar={accent.bar}
               isFullscreen={isFullscreen}
             />
-          </div>
-        )}
+          )}
+          <PresentationPicker students={students} accentBar={accent.bar} isFullscreen={isFullscreen} />
+        </div>
         <div key={index} className="present-slide-in w-full max-w-4xl text-left">
           {slide === "title" && (
             <div className="text-left present-body-font">

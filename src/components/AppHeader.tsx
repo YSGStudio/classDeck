@@ -46,6 +46,7 @@ export function AppHeader() {
         </Link>
         <nav className="flex items-center gap-1">
           {navLink("/", "대시보드")}
+          {navLink("/standards", "성취기준")}
           {navLink("/settings", "설정")}
         </nav>
         <div className="flex items-center gap-2">

@@ -1,12 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { DirectoryGate } from "@/components/DirectoryGate";
 import { useDirectory } from "@/context/DirectoryContext";
 import { buildLessonId, readLesson, writeLesson } from "@/lib/fsLessons";
 import { createEmptyLesson } from "@/lib/types";
+import { clearPendingAchievementStandard, peekPendingAchievementStandard } from "@/lib/pendingAchievementStandard";
 
 const SUBJECT_OPTIONS = ["국어", "영어", "수학", "사회", "과학", "음악", "미술", "체육", "실과", "창체", "도덕"];
 const GRADE_OPTIONS = ["1학년", "2학년", "3학년", "4학년", "5학년", "6학년"];
@@ -20,6 +21,11 @@ function NewLessonForm() {
   const [grade, setGrade] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingStandard, setPendingStandard] = useState<string | null>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => setPendingStandard(peekPendingAchievementStandard()));
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -39,6 +45,10 @@ function NewLessonForm() {
         return;
       }
       const lesson = createEmptyLesson({ id, lessonDate, title, subject, grade });
+      if (pendingStandard) {
+        lesson.achievementStandard = pendingStandard;
+        clearPendingAchievementStandard();
+      }
       await writeLesson(directoryHandle, lesson);
       router.push(`/lessons/${encodeURIComponent(id)}`);
     } catch (err) {
@@ -50,6 +60,12 @@ function NewLessonForm() {
   return (
     <main className="mx-auto w-full max-w-lg flex-1 px-4 py-8">
       <h1 className="text-xl font-bold text-slate-900">새 수업 만들기</h1>
+      {pendingStandard && (
+        <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <span className="font-medium text-slate-700">선택한 성취기준이 함께 저장됩니다.</span>
+          <p className="mt-1 text-slate-500">{pendingStandard}</p>
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="mt-6 space-y-4 rounded-lg border border-slate-200 bg-white p-6">
         <div>
           <label className="block text-sm font-medium text-slate-700">날짜</label>

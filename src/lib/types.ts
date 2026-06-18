@@ -46,6 +46,15 @@ export interface Lesson {
   updatedAt: string;
 }
 
+export type StudentGender = "male" | "female";
+
+export interface Student {
+  id: string;
+  number: number;
+  name: string;
+  gender: StudentGender;
+}
+
 export interface LessonSummary {
   id: string;
   lessonDate: string;

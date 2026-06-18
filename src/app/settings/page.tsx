@@ -1,6 +1,7 @@
 "use client";
 
 import { AppHeader } from "@/components/AppHeader";
+import { StudentRosterEditor } from "@/components/StudentRosterEditor";
 import { useDirectory } from "@/context/DirectoryContext";
 
 export default function SettingsPage() {
@@ -40,6 +41,16 @@ export default function SettingsPage() {
             폴더를 통째로 복사하면 백업·이동이 끝납니다. 폴더를 삭제하면 데이터를 복구할 수 없으니
             주기적으로 백업해 주세요.
           </p>
+        </section>
+
+        <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
+          <h2 className="text-sm font-semibold text-slate-900">학생 명단</h2>
+          <p className="mt-2 text-sm text-slate-600">
+            발표모드의 발표뽑기 기능에서 사용할 학생 번호·이름·성별을 등록합니다.
+          </p>
+          <div className="mt-4">
+            <StudentRosterEditor />
+          </div>
         </section>
 
         <section className="mt-6 rounded-lg border border-slate-200 bg-white p-6">
