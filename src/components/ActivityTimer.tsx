@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CORNER_WIDGET_SIZE } from "@/lib/presentTheme";
 
 export function ActivityTimer({
   initialMinutes,
@@ -43,12 +44,14 @@ export function ActivityTimer({
   const isDone = remaining === 0;
 
   const stepperButtonClass = `flex items-center justify-center rounded-full font-medium transition disabled:opacity-30 ${
-    isFullscreen ? "h-9 w-9 text-lg" : "h-6 w-6 text-sm"
+    isFullscreen ? "h-5 w-5 text-xs" : "h-4 w-4 text-[10px]"
   } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`;
 
   return (
     <div
-      className={`flex flex-col items-center gap-2 rounded-2xl border shadow-lg ${isFullscreen ? "px-6 py-5" : "px-4 py-3"} ${
+      className={`flex flex-col items-center justify-center gap-1 rounded-xl border shadow-lg ${
+        isFullscreen ? `${CORNER_WIDGET_SIZE.fullscreen} px-3 py-2` : `${CORNER_WIDGET_SIZE.normal} px-2 py-1.5`
+      } ${
         isDone
           ? "border-red-400 bg-red-50"
           : isFullscreen
@@ -56,7 +59,7 @@ export function ActivityTimer({
             : "border-slate-200 bg-white"
       }`}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
         <button
           onClick={() => changeMinutes(minutes - 1)}
           disabled={running}
@@ -72,11 +75,11 @@ export function ActivityTimer({
           value={minutes}
           disabled={running}
           onChange={(e) => changeMinutes(Number(e.target.value) || 1)}
-          className={`rounded-md border text-center disabled:opacity-50 ${
-            isFullscreen ? "w-16 px-2 py-1 text-lg" : "w-10 px-1 py-0.5 text-sm"
+          className={`rounded border text-center disabled:opacity-50 ${
+            isFullscreen ? "w-9 px-1 py-0.5 text-xs" : "w-7 px-0.5 text-[10px]"
           } ${isFullscreen ? "border-slate-600 bg-transparent text-white" : "border-slate-300 text-slate-900"}`}
         />
-        <span className={isFullscreen ? "text-base text-slate-300" : "text-xs text-slate-500"}>분</span>
+        <span className={isFullscreen ? "text-xs text-slate-300" : "text-[10px] text-slate-500"}>분</span>
         <button
           onClick={() => changeMinutes(minutes + 1)}
           disabled={running}
@@ -88,19 +91,19 @@ export function ActivityTimer({
       </div>
 
       <span
-        className={`present-title-font tabular-nums ${isFullscreen ? "text-8xl" : "text-4xl"} ${
+        className={`present-title-font tabular-nums ${isFullscreen ? "text-2xl" : "text-lg"} ${
           isDone ? "text-red-600" : isFullscreen ? "text-white" : "text-slate-900"
         }`}
       >
         {String(mm).padStart(2, "0")}:{String(ss).padStart(2, "0")}
       </span>
 
-      <div className="flex gap-1.5">
+      <div className="flex gap-1">
         <button
           onClick={() => setRunning((r) => !r)}
           disabled={isDone}
           className={`rounded-full font-medium text-white transition disabled:opacity-40 ${
-            isFullscreen ? "px-5 py-2 text-lg" : "px-3 py-1 text-xs"
+            isFullscreen ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[10px]"
           } ${accentBar}`}
         >
           {running ? "일시정지" : "시작"}
@@ -110,7 +113,7 @@ export function ActivityTimer({
             setRemaining(minutes * 60);
             setRunning(false);
           }}
-          className={`rounded-full font-medium ${isFullscreen ? "px-5 py-2 text-lg" : "px-3 py-1 text-xs"} ${
+          className={`rounded-full font-medium ${isFullscreen ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[10px]"} ${
             isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
           }`}
         >

@@ -86,6 +86,13 @@ export const ACCENT_CLASSES: Record<AccentKey, AccentClasses> = {
   },
 };
 
+// Shared fixed box size so the timer and presentation-picker corner widgets
+// always match, regardless of how much content either one has at the moment.
+export const CORNER_WIDGET_SIZE = {
+  normal: "w-40 h-28",
+  fullscreen: "w-48 h-32",
+};
+
 export function getAccentKey(slide: Slide, activityKind?: ActivityKind): AccentKey {
   switch (slide) {
     case "title":

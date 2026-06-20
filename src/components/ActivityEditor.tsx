@@ -3,7 +3,6 @@
 import { useRef, useState } from "react";
 import { Activity, ActivityKind } from "@/lib/types";
 import { ACTIVITY_KIND_BADGE_STYLES, ACTIVITY_KIND_LABELS } from "@/lib/activityKinds";
-import { MaterialsEditor } from "@/components/MaterialsEditor";
 
 function generateId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -14,20 +13,16 @@ function renumber(activities: Activity[]): Activity[] {
   return activities.map((a, i) => ({ ...a, orderNo: i + 1 }));
 }
 
-/** Position of this activity among others of the same kind, for display (e.g. "활동 2"). */
+/** Position of this activity among others of the same kind, for display (e.g. "활동2"). */
 function kindIndex(activities: Activity[], index: number): number {
   const kind = activities[index].kind;
   return activities.slice(0, index + 1).filter((a) => a.kind === kind).length;
 }
 
 export function ActivityEditor({
-  lessonId,
-  directoryHandle,
   activities,
   onChange,
 }: {
-  lessonId: string;
-  directoryHandle: FileSystemDirectoryHandle;
   activities: Activity[];
   onChange: (activities: Activity[]) => void;
 }) {
@@ -51,12 +46,7 @@ export function ActivityEditor({
   }
 
   function addRow(kind: ActivityKind) {
-    onChange(
-      renumber([
-        ...activities,
-        { id: generateId(), orderNo: 0, kind, title: "", content: "", materials: [] },
-      ]),
-    );
+    onChange(renumber([...activities, { id: generateId(), orderNo: 0, kind, title: "", content: "" }]));
   }
 
   function removeRow(index: number) {
@@ -161,20 +151,6 @@ export function ActivityEditor({
             rows={2}
             className="mt-2 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
           />
-          <div className="mt-3">
-            <p className="mb-1.5 text-xs font-medium text-slate-500">이 섹션의 자료</p>
-            <MaterialsEditor
-              storagePath={[lessonId, "activities", activity.id]}
-              directoryHandle={directoryHandle}
-              materials={activity.materials}
-              onChange={(materials) => {
-                const next = activities.slice();
-                next[index] = { ...next[index], materials };
-                onChange(next);
-              }}
-              compact
-            />
-          </div>
         </div>
       ))}
     </div>

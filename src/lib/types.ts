@@ -15,8 +15,10 @@ export interface Activity {
   kind: ActivityKind;
   title: string;
   content: string;
-  materials: Material[];
   durationMinutes?: number;
+  /** @deprecated Materials now live on Lesson.materials. Kept only so normalizeLesson
+   * can migrate entries from lessons saved by older versions of the app. */
+  materials?: Material[];
 }
 
 export type MaterialType = "link" | "image" | "file";
@@ -64,19 +66,23 @@ export interface LessonSummary {
   achievementStandard: string;
 }
 
-/** Fills in fields missing from lesson files saved by older versions of the app. */
+/** Fills in fields missing from lesson files saved by older versions of the app.
+ * Also migrates materials that were once attached per-activity back onto
+ * Lesson.materials, since that's now the single place materials are edited. */
 export function normalizeLesson(raw: Lesson): Lesson {
+  const activities = raw.activities ?? [];
+  const hoistedMaterials = activities.flatMap((a) => a.materials ?? []);
   return {
     ...raw,
     rubrics: raw.rubrics ?? [],
-    materials: raw.materials ?? [],
-    activities: (raw.activities ?? []).map((activity, index) => ({
+    materials: [...(raw.materials ?? []), ...hoistedMaterials],
+    activities: activities.map((activity, index) => ({
       id: activity.id ?? `activity-${index}`,
       orderNo: activity.orderNo ?? index + 1,
       kind: activity.kind ?? "activity",
       title: activity.title ?? "",
       content: activity.content ?? "",
-      materials: activity.materials ?? [],
+      durationMinutes: activity.durationMinutes,
     })),
   };
 }

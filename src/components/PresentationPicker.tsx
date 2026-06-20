@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Student, StudentGender } from "@/lib/types";
+import { CORNER_WIDGET_SIZE } from "@/lib/presentTheme";
 
 type GenderFilter = "random" | StudentGender;
 
@@ -45,25 +46,25 @@ export function PresentationPicker({
     setResult(pickRandom(eligible, effectiveCount));
   }
 
-  const selectClass = `rounded-md border px-2 py-1.5 text-sm focus:outline-none ${
+  const selectClass = `rounded border px-1 py-0.5 text-[10px] focus:outline-none ${
     isFullscreen ? "border-slate-600 bg-transparent text-white" : "border-slate-300 text-slate-900"
   }`;
 
   return (
     <>
       <div
-        className={`flex flex-col gap-2 rounded-2xl border px-4 py-3 shadow-lg ${
-          isFullscreen ? "border-slate-700 bg-slate-900/80" : "border-slate-200 bg-white"
+        className={`flex flex-col items-center justify-center gap-1 rounded-xl border px-2 py-1.5 shadow-lg ${
+          isFullscreen ? `${CORNER_WIDGET_SIZE.fullscreen} border-slate-700 bg-slate-900/80` : `${CORNER_WIDGET_SIZE.normal} border-slate-200 bg-white`
         }`}
       >
-        <p className={`text-xs font-medium ${isFullscreen ? "text-slate-300" : "text-slate-500"}`}>발표뽑기</p>
+        <p className={`text-[10px] font-medium ${isFullscreen ? "text-slate-300" : "text-slate-500"}`}>발표뽑기</p>
         {students.length === 0 ? (
-          <p className={`text-xs ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
+          <p className={`text-center text-[10px] leading-tight ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
             설정에서 학생을 먼저 등록하세요.
           </p>
         ) : (
           <>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <select
                 value={genderFilter}
                 onChange={(e) => setGenderFilter(e.target.value as GenderFilter)}
@@ -88,7 +89,9 @@ export function PresentationPicker({
             <button
               onClick={handlePick}
               disabled={eligible.length === 0}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium text-white transition disabled:opacity-40 ${accentBar}`}
+              className={`rounded-full font-medium text-white transition disabled:opacity-40 ${
+                isFullscreen ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[10px]"
+              } ${accentBar}`}
             >
               뽑기
             </button>

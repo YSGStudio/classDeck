@@ -7,6 +7,7 @@ import { useDirectory } from "@/context/DirectoryContext";
 import { DirectoryGate } from "@/components/DirectoryGate";
 import { AppHeader } from "@/components/AppHeader";
 import { MonthCalendar } from "@/components/MonthCalendar";
+import { PresentModeLink } from "@/components/PresentModeLink";
 import { LessonSummary } from "@/lib/types";
 import { buildLessonId, deleteLesson, listLessons, readLesson, writeLesson } from "@/lib/fsLessons";
 
@@ -172,12 +173,12 @@ function Dashboard() {
                   lesson={lesson}
                   actions={
                     <>
-                      <Link
-                        href={`/lessons/${encodeURIComponent(lesson.id)}/present`}
+                      <PresentModeLink
+                        lessonId={lesson.id}
                         className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200"
                       >
                         발표
-                      </Link>
+                      </PresentModeLink>
                       <button
                         onClick={() => handleDuplicate(lesson.id)}
                         className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200"

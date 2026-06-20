@@ -2,6 +2,7 @@
 
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { DirectoryGate } from "@/components/DirectoryGate";
 import { useDirectory } from "@/context/DirectoryContext";
@@ -14,17 +15,35 @@ import { ACCENT_CLASSES, getAccentKey } from "@/lib/presentTheme";
 import { ActivityTimer } from "@/components/ActivityTimer";
 import { QrOverlay } from "@/components/QrOverlay";
 import { MaterialCard } from "@/components/MaterialCard";
+import { MaterialPreviewModal } from "@/components/MaterialPreviewModal";
 import { PresentationPicker } from "@/components/PresentationPicker";
 import "./present.css";
 
+function isPdfMaterial(material: Material): boolean {
+  return material.type === "file" && material.title.toLowerCase().endsWith(".pdf");
+}
+
+const SWIPE_THRESHOLD = 60;
+
 function PresentationView({ id }: { id: string }) {
   const { directoryHandle } = useDirectory();
+  const router = useRouter();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
   const [index, setIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const dragStartX = useRef<number | null>(null);
+  // Fullscreen may already be active on mount: the "발표모드" link requests it on
+  // the *previous* page before navigating, and that state survives the
+  // client-side route change without firing a fresh "fullscreenchange" event here.
+  const [isFullscreen, setIsFullscreen] = useState(
+    () => typeof document !== "undefined" && Boolean(document.fullscreenElement),
+  );
   const [qrMaterial, setQrMaterial] = useState<Material | null>(null);
+  const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
+  const [materialsMenuOpen, setMaterialsMenuOpen] = useState(false);
+  const [pdfMaterial, setPdfMaterial] = useState<Material | null>(null);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!directoryHandle) return;
@@ -39,9 +58,43 @@ function PresentationView({ id }: { id: string }) {
   );
 
   useEffect(() => {
+    let objectUrl: string | null = null;
+    let cancelled = false;
+    (async () => {
+      setPdfBlobUrl(null);
+      if (!directoryHandle || !pdfMaterial?.path) return;
+      const file = await readMaterialFile(directoryHandle, pdfMaterial.path);
+      if (cancelled) return;
+      objectUrl = URL.createObjectURL(file);
+      setPdfBlobUrl(objectUrl);
+    })();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [directoryHandle, pdfMaterial]);
+
+  useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (qrMaterial) {
         if (e.key === "Escape") setQrMaterial(null);
+        return;
+      }
+      if (previewMaterial) {
+        if (e.key === "Escape") setPreviewMaterial(null);
+        return;
+      }
+      if (pdfMaterial) {
+        if (e.key === "Escape") setPdfMaterial(null);
+        return;
+      }
+      if (materialsMenuOpen && e.key === "Escape") {
+        setMaterialsMenuOpen(false);
+        return;
+      }
+      if (e.key === "Escape") {
+        if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+        if (lesson) router.push(`/lessons/${encodeURIComponent(lesson.id)}`);
         return;
       }
       if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
@@ -52,7 +105,7 @@ function PresentationView({ id }: { id: string }) {
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [slides.length, qrMaterial]);
+  }, [slides.length, qrMaterial, previewMaterial, pdfMaterial, materialsMenuOpen, lesson, router]);
 
   useEffect(() => {
     function handleFsChange() {
@@ -84,6 +137,37 @@ function PresentationView({ id }: { id: string }) {
     window.open(blobUrl, "_blank");
   }
 
+  function handleMaterialSelect(material: Material) {
+    setMaterialsMenuOpen(false);
+    if (isPdfMaterial(material)) {
+      setPdfMaterial(material);
+      return;
+    }
+    if (material.type === "file") {
+      // Non-PDF files (pptx, docx, ...) have no good inline preview — best effort new tab.
+      openMaterial(material);
+      return;
+    }
+    setPreviewMaterial(material);
+  }
+
+  function handlePointerDown(e: React.PointerEvent) {
+    dragStartX.current = e.clientX;
+  }
+
+  function handlePointerUp(e: React.PointerEvent) {
+    const startX = dragStartX.current;
+    dragStartX.current = null;
+    if (startX === null) return;
+    if (qrMaterial || previewMaterial || pdfMaterial || materialsMenuOpen) return;
+    const deltaX = e.clientX - startX;
+    if (deltaX > SWIPE_THRESHOLD) {
+      setIndex((i) => Math.min(i + 1, slides.length - 1));
+    } else if (deltaX < -SWIPE_THRESHOLD) {
+      setIndex((i) => Math.max(i - 1, 0));
+    }
+  }
+
   if (!lesson) {
     return <p className="px-4 py-12 text-center text-slate-400">불러오는 중…</p>;
   }
@@ -108,7 +192,7 @@ function PresentationView({ id }: { id: string }) {
               isFullscreen={isFullscreen}
               accentBadge={accent.badge}
               accentHoverBorder={accent.buttonHover}
-              onOpen={() => openMaterial(material)}
+              onOpen={() => handleMaterialSelect(material)}
               onShowQr={material.type === "link" ? () => setQrMaterial(material) : undefined}
             />
           </li>
@@ -120,7 +204,9 @@ function PresentationView({ id }: { id: string }) {
   return (
     <div
       ref={containerRef}
-      className={`relative flex flex-1 flex-col overflow-hidden ${
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      className={`relative flex min-h-0 flex-1 flex-col overflow-hidden touch-pan-y ${
         isFullscreen
           ? "bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white"
           : "bg-gradient-to-br from-white via-slate-50 to-slate-100 text-slate-900"
@@ -157,8 +243,12 @@ function PresentationView({ id }: { id: string }) {
         </div>
       )}
 
-      <div className="relative z-10 flex flex-1 items-start justify-start px-12 py-12">
-        <div className="absolute right-8 top-8 z-20 flex flex-col items-end gap-3">
+      <div
+        className={`relative z-10 flex min-h-0 flex-1 justify-start px-12 ${
+          pdfMaterial ? "items-stretch py-3" : "items-start py-12"
+        }`}
+      >
+        <div className="absolute right-8 top-8 z-20 flex flex-col items-end gap-2">
           {slide === "activity" && currentActivity && (
             <ActivityTimer
               key={`timer-${index}`}
@@ -169,6 +259,32 @@ function PresentationView({ id }: { id: string }) {
           )}
           <PresentationPicker students={students} accentBar={accent.bar} isFullscreen={isFullscreen} />
         </div>
+        {pdfMaterial ? (
+          <div className={`flex min-h-0 w-full flex-1 flex-col ${isFullscreen ? "pr-52" : "pr-44"}`}>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className={`present-title-font truncate ${isFullscreen ? "text-2xl text-white" : "text-xl text-slate-800"}`}>
+                {pdfMaterial.title}
+              </p>
+              <button
+                onClick={() => setPdfMaterial(null)}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium ${
+                  isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                닫기
+              </button>
+            </div>
+            <div className={`min-h-0 flex-1 overflow-hidden rounded-xl border ${isFullscreen ? "border-slate-700 bg-slate-900/40" : "border-slate-200 bg-white"}`}>
+              {pdfBlobUrl ? (
+                <iframe src={pdfBlobUrl} title={pdfMaterial.title} className="h-full w-full" />
+              ) : (
+                <div className={`flex h-full items-center justify-center ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
+                  불러오는 중…
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
         <div key={index} className="present-slide-in w-full max-w-4xl text-left">
           {slide === "title" && (
             <div className="text-left present-body-font">
@@ -236,7 +352,6 @@ function PresentationView({ id }: { id: string }) {
                   >
                     {activity.content}
                   </p>
-                  {renderMaterials(activity.materials)}
                 </SlideBlock>
               );
             })()}
@@ -276,34 +391,57 @@ function PresentationView({ id }: { id: string }) {
             </SlideBlock>
           )}
         </div>
+        )}
       </div>
 
-      <div className="relative z-10 flex items-center justify-between px-6 py-5">
-        <button
-          onClick={() => setIndex((i) => Math.max(i - 1, 0))}
-          disabled={index === 0}
-          className={`flex items-center gap-1.5 rounded-full font-medium shadow-sm transition disabled:opacity-30 disabled:shadow-none ${
-            isFullscreen ? "px-7 py-3.5 text-xl" : "px-5 py-2.5 text-sm"
-          } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
-        >
-          ← 이전
-        </button>
-        <span className={`font-medium ${isFullscreen ? "text-lg" : "text-sm"} ${isFullscreen ? "text-slate-400" : "text-slate-500"}`}>
-          {index + 1} / {slides.length}
-        </span>
-        <button
-          onClick={() => setIndex((i) => Math.min(i + 1, slides.length - 1))}
-          disabled={index === slides.length - 1}
-          className={`flex items-center gap-1.5 rounded-full font-medium shadow-sm transition disabled:opacity-30 disabled:shadow-none ${
-            isFullscreen ? "px-7 py-3.5 text-xl" : "px-5 py-2.5 text-sm"
-          } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
-        >
-          다음 →
-        </button>
+      <div className="relative z-10 flex items-center justify-end px-6 py-5">
+        <div className="relative">
+          {materialsMenuOpen && (
+            <ul
+              className={`absolute bottom-full right-0 mb-2 max-h-64 w-56 overflow-y-auto rounded-xl border shadow-lg ${
+                isFullscreen ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+              }`}
+            >
+              {lesson.materials.length === 0 ? (
+                <li className={`px-3 py-2.5 text-sm ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
+                  등록된 자료가 없습니다.
+                </li>
+              ) : (
+                lesson.materials.map((material, i) => (
+                  <li key={i}>
+                    <button
+                      onClick={() => handleMaterialSelect(material)}
+                      className={`block w-full truncate px-3 py-2.5 text-left text-sm ${
+                        isFullscreen ? "text-slate-200 hover:bg-white/10" : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {material.title}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+          <button
+            onClick={() => setMaterialsMenuOpen((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-full font-medium shadow-sm transition ${
+              isFullscreen ? "px-7 py-3.5 text-xl" : "px-5 py-2.5 text-sm"
+            } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
+          >
+            수업자료
+          </button>
+        </div>
       </div>
 
       {qrMaterial && (
         <QrOverlay material={qrMaterial} isFullscreen={isFullscreen} onClose={() => setQrMaterial(null)} />
+      )}
+      {previewMaterial && (
+        <MaterialPreviewModal
+          material={previewMaterial}
+          directoryHandle={directoryHandle}
+          onClose={() => setPreviewMaterial(null)}
+        />
       )}
     </div>
   );

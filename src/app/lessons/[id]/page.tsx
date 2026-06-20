@@ -6,6 +6,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { DirectoryGate } from "@/components/DirectoryGate";
 import { RubricEditor } from "@/components/RubricEditor";
 import { ActivityEditor } from "@/components/ActivityEditor";
+import { MaterialsEditor } from "@/components/MaterialsEditor";
+import { PresentModeLink } from "@/components/PresentModeLink";
 import { useDirectory } from "@/context/DirectoryContext";
 import { readLesson, writeLesson } from "@/lib/fsLessons";
 import { Lesson } from "@/lib/types";
@@ -71,12 +73,12 @@ function LessonEditor({ id }: { id: string }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href={`/lessons/${encodeURIComponent(lesson.id)}/present`}
+          <PresentModeLink
+            lessonId={lesson.id}
             className="rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
             발표모드
-          </Link>
+          </PresentModeLink>
           <button
             onClick={handleSave}
             disabled={saving}
@@ -135,10 +137,17 @@ function LessonEditor({ id }: { id: string }) {
 
         <Section title="활동">
           <ActivityEditor
-            lessonId={lesson.id}
-            directoryHandle={directoryHandle}
             activities={lesson.activities}
             onChange={(activities) => update("activities", activities)}
+          />
+        </Section>
+
+        <Section title="수업 자료">
+          <MaterialsEditor
+            storagePath={[lesson.id]}
+            directoryHandle={directoryHandle}
+            materials={lesson.materials}
+            onChange={(materials) => update("materials", materials)}
           />
         </Section>
 
