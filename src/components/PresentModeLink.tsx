@@ -7,6 +7,10 @@ import { useRouter } from "next/navigation";
  * click's user-activation), then navigates. Fullscreen state survives the
  * client-side route change since the document never unloads, so the
  * presentation page mounts already in fullscreen.
+ *
+ * There is no non-fullscreen presentation screen — only 준비모드 (this page)
+ * and the fullscreen presentation exist. If the browser denies or doesn't
+ * support fullscreen, we stay put rather than navigating to a degraded view.
  */
 export function PresentModeLink({
   lessonId,
@@ -26,9 +30,12 @@ export function PresentModeLink({
     try {
       await document.documentElement.requestFullscreen();
     } catch {
-      // Fullscreen request can be denied or unsupported — fall back to a normal,
-      // non-fullscreen navigation; the present page still has a manual toggle.
+      // Denied or unsupported — stay on 준비모드 rather than navigating to a
+      // presentation page with no fullscreen to show.
+      return;
     }
+    // Client-side navigation: a full reload would unload the document and
+    // exit fullscreen before the presentation page ever mounts.
     router.push(href);
   }
 

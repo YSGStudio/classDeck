@@ -2,7 +2,6 @@
 
 import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppHeader } from "@/components/AppHeader";
 import { DirectoryGate } from "@/components/DirectoryGate";
 import { useDirectory } from "@/context/DirectoryContext";
 import { readLesson, readMaterialFile } from "@/lib/fsLessons";
@@ -92,8 +91,10 @@ function PresentationView({ id }: { id: string }) {
         return;
       }
       if (e.key === "Escape") {
+        // Exiting fullscreen triggers the fullscreenchange listener below, which
+        // does the actual navigation back to 준비모드 — kept in one place so any
+        // way of losing fullscreen (Escape, F11, browser UI, ...) behaves the same.
         if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-        if (lesson) router.push(`/lessons/${encodeURIComponent(lesson.id)}`);
         return;
       }
       if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
@@ -104,24 +105,31 @@ function PresentationView({ id }: { id: string }) {
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [slides.length, qrMaterial, previewMaterial, pdfMaterial, materialsMenuOpen, lesson, router]);
+  }, [slides.length, qrMaterial, previewMaterial, pdfMaterial, materialsMenuOpen]);
 
   useEffect(() => {
+    // There is no non-fullscreen presentation view anymore: the moment fullscreen
+    // is lost — Escape, F11, browser chrome, anything — bounce straight back to
+    // 준비모드 instead of rendering this page in a non-fullscreen state.
     function handleFsChange() {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      const active = Boolean(document.fullscreenElement);
+      setIsFullscreen(active);
+      if (!active) router.push(`/lessons/${encodeURIComponent(id)}`);
     }
     document.addEventListener("fullscreenchange", handleFsChange);
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
-  }, []);
+  }, [id, router]);
 
   useEffect(() => {
     // Normally already fullscreen by the time this mounts (PresentModeLink
-    // requests it before navigating). This is just a best-effort fallback for
-    // edge cases like a direct URL visit — there's no manual toggle anymore.
-    if (!document.fullscreenElement) {
-      containerRef.current?.requestFullscreen().catch(() => {});
-    }
-  }, []);
+    // requests it before navigating). This is a fallback for edge cases like a
+    // direct URL visit; if fullscreen can't be entered there's nothing useful
+    // to show, so go back to 준비모드 instead of an unstyled in-between page.
+    if (document.fullscreenElement) return;
+    containerRef.current?.requestFullscreen().catch(() => {
+      router.push(`/lessons/${encodeURIComponent(id)}`);
+    });
+  }, [id, router]);
 
   async function openMaterial(material: Material) {
     if (material.type === "link" && material.url) {
@@ -461,11 +469,8 @@ function SlideBlock({
 export default function PresentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   return (
-    <>
-      <AppHeader />
-      <DirectoryGate>
-        <PresentationView id={decodeURIComponent(id)} />
-      </DirectoryGate>
-    </>
+    <DirectoryGate>
+      <PresentationView id={decodeURIComponent(id)} />
+    </DirectoryGate>
   );
 }
