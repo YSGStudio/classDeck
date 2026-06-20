@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppHeader } from "@/components/AppHeader";
 import { DirectoryGate } from "@/components/DirectoryGate";
@@ -115,13 +114,14 @@ function PresentationView({ id }: { id: string }) {
     return () => document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  async function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-    } else {
-      await containerRef.current?.requestFullscreen();
+  useEffect(() => {
+    // Normally already fullscreen by the time this mounts (PresentModeLink
+    // requests it before navigating). This is just a best-effort fallback for
+    // edge cases like a direct URL visit — there's no manual toggle anymore.
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen().catch(() => {});
     }
-  }
+  }, []);
 
   async function openMaterial(material: Material) {
     if (material.type === "link" && material.url) {
@@ -228,20 +228,6 @@ function PresentationView({ id }: { id: string }) {
         aria-hidden
         className={`present-glow pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full ${accent.glow} opacity-10 blur-3xl`}
       />
-
-      {!isFullscreen && (
-        <div className="relative z-10 flex items-center justify-between border-b border-slate-200/70 px-4 py-2">
-          <Link href={`/lessons/${encodeURIComponent(lesson.id)}`} className="text-sm text-slate-500 hover:text-slate-800">
-            ← 준비모드로 돌아가기
-          </Link>
-          <button
-            onClick={toggleFullscreen}
-            className="rounded-full border border-slate-300 bg-white px-4 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50"
-          >
-            ⛶ 전체화면
-          </button>
-        </div>
-      )}
 
       <div
         className={`relative z-10 flex min-h-0 flex-1 justify-start px-12 ${
