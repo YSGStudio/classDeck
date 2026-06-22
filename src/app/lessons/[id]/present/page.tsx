@@ -355,29 +355,35 @@ function PresentationView({ id }: { id: string }) {
 
           {slide === "rubrics" && (
             <SlideBlock eyebrow="채점기준" isFullscreen={isFullscreen} accentBadge={accent.badge}>
-              <div className={`overflow-hidden rounded-xl border ${isFullscreen ? "border-slate-700" : "border-slate-200"}`}>
-                <table
-                  className={`present-body-font w-full border-collapse text-left ${isFullscreen ? "text-4xl" : "text-xl"}`}
-                >
-                  <thead>
-                    <tr className={isFullscreen ? "bg-white/5" : "bg-slate-900/5"}>
-                      <th className={isFullscreen ? "py-5 px-6" : "py-3 px-4"}>기준</th>
-                      <th className={isFullscreen ? "py-5 px-6" : "py-3 px-4"}>상</th>
-                      <th className={isFullscreen ? "py-5 px-6" : "py-3 px-4"}>중</th>
-                      <th className={isFullscreen ? "py-5 px-6" : "py-3 px-4"}>하</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lesson.rubrics.map((rubric, i) => (
-                      <tr key={i} className={`border-t ${isFullscreen ? "border-slate-700" : "border-slate-200"}`}>
-                        <td className={`font-medium ${isFullscreen ? "py-5 px-6" : "py-3 px-4"}`}>{rubric.criteria}</td>
-                        <td className={isFullscreen ? "py-5 px-6" : "py-3 px-4"}>{rubric.high}</td>
-                        <td className={isFullscreen ? "py-5 px-6" : "py-3 px-4"}>{rubric.mid}</td>
-                        <td className={isFullscreen ? "py-5 px-6" : "py-3 px-4"}>{rubric.low}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-6">
+                {lesson.rubrics.map((rubric, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-xl border p-5 ${isFullscreen ? "border-slate-700 bg-white/5" : "border-slate-200 bg-white"}`}
+                  >
+                    <p className={`present-title-font ${isFullscreen ? "text-4xl text-white" : "text-2xl text-slate-900"}`}>
+                      {rubric.criteria}
+                    </p>
+                    <div className={`present-body-font mt-3 space-y-2 ${isFullscreen ? "text-2xl" : "text-base"}`}>
+                      {[
+                        { label: "상", text: rubric.high },
+                        { label: "중", text: rubric.mid },
+                        { label: "하", text: rubric.low },
+                      ].map(({ label, text }) => (
+                        <p key={label} className="flex items-start gap-3">
+                          <span
+                            className={`shrink-0 rounded px-2 py-0.5 font-medium ${
+                              isFullscreen ? "bg-white/10 text-white" : accent.badge
+                            } ${isFullscreen ? "text-lg" : "text-sm"}`}
+                          >
+                            {label}
+                          </span>
+                          <span className={isFullscreen ? "text-slate-200" : "text-slate-700"}>{text}</span>
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             </SlideBlock>
           )}

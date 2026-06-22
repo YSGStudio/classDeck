@@ -44,24 +44,37 @@ export function RubricEditor({
               삭제
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-6 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-xs font-medium text-slate-500">
+              상
+            </span>
             <input
               value={rubric.high}
               onChange={(e) => updateRow(index, "high", e.target.value)}
-              placeholder="상"
-              className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+              placeholder="상 수준 기준"
+              className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-6 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-xs font-medium text-slate-500">
+              중
+            </span>
             <input
               value={rubric.mid}
               onChange={(e) => updateRow(index, "mid", e.target.value)}
-              placeholder="중"
-              className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+              placeholder="중 수준 기준"
+              className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-6 shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-center text-xs font-medium text-slate-500">
+              하
+            </span>
             <input
               value={rubric.low}
               onChange={(e) => updateRow(index, "low", e.target.value)}
-              placeholder="하"
-              className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
+              placeholder="하 수준 기준"
+              className="flex-1 rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
             />
           </div>
         </div>
