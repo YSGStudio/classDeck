@@ -361,20 +361,20 @@ function PresentationView({ id }: { id: string }) {
                     key={i}
                     className={`rounded-xl border p-5 ${isFullscreen ? "border-slate-700 bg-white/5" : "border-slate-200 bg-white"}`}
                   >
-                    <p className={`present-title-font ${isFullscreen ? "text-4xl text-white" : "text-2xl text-slate-900"}`}>
+                    <p className={`present-title-font ${isFullscreen ? "text-6xl text-white" : "text-3xl text-slate-900"}`}>
                       {rubric.criteria}
                     </p>
-                    <div className={`present-body-font mt-3 space-y-2 ${isFullscreen ? "text-2xl" : "text-base"}`}>
+                    <div className={`present-body-font mt-5 space-y-3 ${isFullscreen ? "text-4xl" : "text-xl"}`}>
                       {[
                         { label: "상", text: rubric.high },
                         { label: "중", text: rubric.mid },
                         { label: "하", text: rubric.low },
                       ].map(({ label, text }) => (
-                        <p key={label} className="flex items-start gap-3">
+                        <p key={label} className="flex items-start gap-4">
                           <span
-                            className={`shrink-0 rounded px-2 py-0.5 font-medium ${
-                              isFullscreen ? "bg-white/10 text-white" : accent.badge
-                            } ${isFullscreen ? "text-lg" : "text-sm"}`}
+                            className={`shrink-0 rounded font-medium ${
+                              isFullscreen ? "bg-white/10 px-3 py-1 text-2xl text-white" : `${accent.badge} px-2.5 py-1 text-base`
+                            }`}
                           >
                             {label}
                           </span>
