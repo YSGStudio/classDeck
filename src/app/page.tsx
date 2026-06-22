@@ -11,7 +11,55 @@ import { PresentModeLink } from "@/components/PresentModeLink";
 import { LessonSummary } from "@/lib/types";
 import { buildLessonId, deleteLesson, listLessons, readLesson, writeLesson } from "@/lib/fsLessons";
 
-function LessonRow({ lesson, actions }: { lesson: LessonSummary; actions: React.ReactNode }) {
+function LessonRow({
+  lesson,
+  isEditing,
+  onStartEdit,
+  onStopEdit,
+  onTitleChange,
+  onTitleBlur,
+  onDateChange,
+  actions,
+}: {
+  lesson: LessonSummary;
+  isEditing: boolean;
+  onStartEdit: () => void;
+  onStopEdit: () => void;
+  onTitleChange: (title: string) => void;
+  onTitleBlur: () => void;
+  onDateChange: (date: string) => void;
+  actions: React.ReactNode;
+}) {
+  if (isEditing) {
+    return (
+      <li className="flex items-center justify-between gap-3 rounded-lg border border-slate-300 bg-slate-100 px-4 py-3">
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <input
+            value={lesson.title}
+            onChange={(e) => onTitleChange(e.target.value)}
+            onBlur={onTitleBlur}
+            autoFocus
+            className="w-full rounded-md border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-slate-500 focus:outline-none"
+          />
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <input
+              type="date"
+              value={lesson.lessonDate}
+              onChange={(e) => onDateChange(e.target.value)}
+              className="rounded-md border border-slate-300 px-1.5 py-0.5 text-xs focus:border-slate-500 focus:outline-none"
+            />
+            <span>
+              · {lesson.subject || "과목 없음"} · {lesson.grade || "학년 없음"}
+            </span>
+          </div>
+        </div>
+        <button onClick={onStopEdit} className="rounded px-2 py-1 text-xs text-slate-600 hover:bg-slate-200">
+          완료
+        </button>
+      </li>
+    );
+  }
+
   return (
     <li className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3">
       <Link href={`/lessons/${encodeURIComponent(lesson.id)}`} className="flex-1 min-w-0">
@@ -20,7 +68,12 @@ function LessonRow({ lesson, actions }: { lesson: LessonSummary; actions: React.
           {lesson.lessonDate} · {lesson.subject || "과목 없음"} · {lesson.grade || "학년 없음"}
         </p>
       </Link>
-      <div className="flex items-center gap-1 text-xs">{actions}</div>
+      <div className="flex items-center gap-1 text-xs">
+        <button onClick={onStartEdit} className="rounded px-2 py-1 text-slate-600 hover:bg-slate-200">
+          수정
+        </button>
+        {actions}
+      </div>
     </li>
   );
 }
@@ -32,6 +85,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!directoryHandle) return;
@@ -55,6 +109,31 @@ function Dashboard() {
     if (!q) return [];
     return lessons.filter((l) => l.title.includes(q) || l.achievementStandard.includes(q));
   }, [lessons, searchQuery]);
+
+  function updateLessonField(id: string, patch: Partial<LessonSummary>) {
+    setLessons((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  }
+
+  async function persistLessonField(id: string, patch: { title?: string; lessonDate?: string }) {
+    if (!directoryHandle) return;
+    const full = await readLesson(directoryHandle, id);
+    if (!full) return;
+    await writeLesson(directoryHandle, { ...full, ...patch, updatedAt: new Date().toISOString() });
+  }
+
+  function handleTitleChange(id: string, title: string) {
+    updateLessonField(id, { title });
+  }
+
+  function handleTitleBlur(id: string, title: string) {
+    void persistLessonField(id, { title });
+  }
+
+  function handleDateChange(id: string, lessonDate: string) {
+    if (!lessonDate) return;
+    updateLessonField(id, { lessonDate });
+    void persistLessonField(id, { lessonDate });
+  }
 
   async function copyLessonToDate(id: string, lessonDate: string, suffix: string) {
     if (!directoryHandle) return;
@@ -132,6 +211,12 @@ function Dashboard() {
                     <LessonRow
                       key={lesson.id}
                       lesson={lesson}
+                      isEditing={editingId === lesson.id}
+                      onStartEdit={() => setEditingId(lesson.id)}
+                      onStopEdit={() => setEditingId(null)}
+                      onTitleChange={(title) => handleTitleChange(lesson.id, title)}
+                      onTitleBlur={() => handleTitleBlur(lesson.id, lesson.title)}
+                      onDateChange={(date) => handleDateChange(lesson.id, date)}
                       actions={
                         <button
                           onClick={() => handleCopyToToday(lesson.id)}
@@ -171,6 +256,12 @@ function Dashboard() {
                 <LessonRow
                   key={lesson.id}
                   lesson={lesson}
+                  isEditing={editingId === lesson.id}
+                  onStartEdit={() => setEditingId(lesson.id)}
+                  onStopEdit={() => setEditingId(null)}
+                  onTitleChange={(title) => handleTitleChange(lesson.id, title)}
+                  onTitleBlur={() => handleTitleBlur(lesson.id, lesson.title)}
+                  onDateChange={(date) => handleDateChange(lesson.id, date)}
                   actions={
                     <>
                       <PresentModeLink

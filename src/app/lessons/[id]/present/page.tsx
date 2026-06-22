@@ -279,9 +279,9 @@ function PresentationView({ id }: { id: string }) {
             </div>
           </div>
         ) : (
-        <div key={index} className="present-slide-in w-full max-w-4xl text-left">
+        <div key={index} className={`present-slide-in w-full text-left ${slide === "title" ? "max-w-none" : "max-w-4xl"}`}>
           {slide === "title" && (
-            <div className="text-left present-body-font">
+            <div className={`text-left present-body-font ${isFullscreen ? "pr-56" : "pr-48"}`}>
               <div className="flex flex-wrap gap-2">
                 {[lesson.subject, lesson.grade, lesson.lessonDate].filter(Boolean).map((tag, i) => (
                   <span
