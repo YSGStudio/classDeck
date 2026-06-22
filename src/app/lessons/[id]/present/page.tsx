@@ -254,7 +254,7 @@ function PresentationView({ id }: { id: string }) {
           <PresentationPicker students={students} accentBar={accent.bar} isFullscreen={isFullscreen} />
         </div>
         {pdfMaterial ? (
-          <div className={`flex min-h-0 w-full flex-1 flex-col ${isFullscreen ? "pr-52" : "pr-44"}`}>
+          <div className={`flex min-h-0 w-full flex-1 flex-col ${isFullscreen ? "pr-56" : "pr-48"}`}>
             <div className="mb-2 flex items-center justify-between gap-3">
               <p className={`present-title-font truncate ${isFullscreen ? "text-2xl text-white" : "text-xl text-slate-800"}`}>
                 {pdfMaterial.title}
@@ -279,9 +279,12 @@ function PresentationView({ id }: { id: string }) {
             </div>
           </div>
         ) : (
-        <div key={index} className={`present-slide-in w-full text-left ${slide === "title" ? "max-w-none" : "max-w-4xl"}`}>
+        <div
+          key={index}
+          className={`present-slide-in w-full max-w-none text-left ${isFullscreen ? "pr-56" : "pr-48"}`}
+        >
           {slide === "title" && (
-            <div className={`text-left present-body-font ${isFullscreen ? "pr-56" : "pr-48"}`}>
+            <div className="text-left present-body-font">
               <div className="flex flex-wrap gap-2">
                 {[lesson.subject, lesson.grade, lesson.lessonDate].filter(Boolean).map((tag, i) => (
                   <span
@@ -297,7 +300,7 @@ function PresentationView({ id }: { id: string }) {
               <h1 className={`present-title-font mt-6 ${isFullscreen ? "text-9xl" : "text-6xl"}`}>{lesson.title}</h1>
               <div className={`mt-5 h-1.5 w-24 rounded-full ${accent.bar}`} />
               {lesson.achievementStandard && (
-                <p className={`mt-8 ${isFullscreen ? "text-4xl" : "text-xl"} ${isFullscreen ? "text-slate-300" : "text-slate-600"}`}>
+                <p className={`mt-8 ${isFullscreen ? "text-5xl" : "text-2xl"} ${isFullscreen ? "text-slate-300" : "text-slate-600"}`}>
                   {lesson.achievementStandard}
                 </p>
               )}
@@ -306,7 +309,7 @@ function PresentationView({ id }: { id: string }) {
 
           {slide === "inquiry" && (
             <SlideBlock eyebrow="탐구질문" isFullscreen={isFullscreen} accentBadge={accent.badge}>
-              <p className={`present-body-font font-semibold leading-snug ${isFullscreen ? "text-7xl" : "text-4xl"}`}>
+              <p className={`present-body-font font-semibold leading-snug ${isFullscreen ? "text-8xl" : "text-5xl"}`}>
                 {lesson.inquiryQuestion}
               </p>
             </SlideBlock>
@@ -314,7 +317,7 @@ function PresentationView({ id }: { id: string }) {
 
           {slide === "goal" && (
             <SlideBlock eyebrow="도달목표" isFullscreen={isFullscreen} accentBadge={accent.badge}>
-              <p className={`present-body-font font-medium leading-snug ${isFullscreen ? "text-6xl" : "text-3xl"}`}>
+              <p className={`present-body-font font-medium leading-snug ${isFullscreen ? "text-7xl" : "text-4xl"}`}>
                 {lesson.goal}
               </p>
             </SlideBlock>
@@ -322,7 +325,7 @@ function PresentationView({ id }: { id: string }) {
 
           {slide === "task" && (
             <SlideBlock eyebrow="수행과제" isFullscreen={isFullscreen} accentBadge={accent.badge}>
-              <p className={`present-body-font font-medium leading-snug ${isFullscreen ? "text-6xl" : "text-3xl"}`}>
+              <p className={`present-body-font font-medium leading-snug ${isFullscreen ? "text-7xl" : "text-4xl"}`}>
                 {lesson.task}
               </p>
             </SlideBlock>
@@ -338,9 +341,9 @@ function PresentationView({ id }: { id: string }) {
                   isFullscreen={isFullscreen}
                   accentBadge={accent.badge}
                 >
-                  <h2 className={`present-title-font ${isFullscreen ? "text-6xl" : "text-3xl"}`}>{activity.title}</h2>
+                  <h2 className={`present-title-font ${isFullscreen ? "text-7xl" : "text-4xl"}`}>{activity.title}</h2>
                   <p
-                    className={`present-body-font mt-6 whitespace-pre-wrap ${isFullscreen ? "text-4xl" : "text-xl"} ${
+                    className={`present-body-font mt-6 whitespace-pre-wrap ${isFullscreen ? "text-5xl" : "text-2xl"} ${
                       isFullscreen ? "text-slate-200" : "text-slate-700"
                     }`}
                   >
@@ -354,7 +357,7 @@ function PresentationView({ id }: { id: string }) {
             <SlideBlock eyebrow="채점기준" isFullscreen={isFullscreen} accentBadge={accent.badge}>
               <div className={`overflow-hidden rounded-xl border ${isFullscreen ? "border-slate-700" : "border-slate-200"}`}>
                 <table
-                  className={`present-body-font w-full border-collapse text-left ${isFullscreen ? "text-3xl" : "text-lg"}`}
+                  className={`present-body-font w-full border-collapse text-left ${isFullscreen ? "text-4xl" : "text-xl"}`}
                 >
                   <thead>
                     <tr className={isFullscreen ? "bg-white/5" : "bg-slate-900/5"}>
