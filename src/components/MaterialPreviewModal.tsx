@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Material } from "@/lib/types";
 import { readMaterialFile } from "@/lib/fsLessons";
+import { toEmbeddableUrl } from "@/lib/embedUrl";
 
 export function MaterialPreviewModal({
   material,
@@ -70,8 +71,10 @@ export function MaterialPreviewModal({
           ) : (
             material.url && (
               <iframe
-                src={material.url}
+                src={toEmbeddableUrl(material.url)}
                 title={material.title}
+                allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                allowFullScreen
                 className="h-[70vh] w-full rounded-lg border border-slate-200 bg-white"
               />
             )

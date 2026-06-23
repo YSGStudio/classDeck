@@ -349,6 +349,18 @@ function PresentationView({ id }: { id: string }) {
                   >
                     {activity.content}
                   </p>
+                  {activity.tools.length > 0 && (
+                    <div className="mt-8">
+                      <p
+                        className={`present-body-font text-sm font-medium uppercase tracking-wide ${
+                          isFullscreen ? "text-slate-400" : "text-slate-400"
+                        }`}
+                      >
+                        수업도구
+                      </p>
+                      {renderMaterials(activity.tools)}
+                    </div>
+                  )}
                 </SlideBlock>
               );
             })()}

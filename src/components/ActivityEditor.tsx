@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Activity, ActivityKind } from "@/lib/types";
+import { Activity, ActivityKind, Material } from "@/lib/types";
 import { ACTIVITY_KIND_BADGE_STYLES, ACTIVITY_KIND_LABELS } from "@/lib/activityKinds";
 
 function generateId(): string {
@@ -17,6 +17,61 @@ function renumber(activities: Activity[]): Activity[] {
 function kindIndex(activities: Activity[], index: number): number {
   const kind = activities[index].kind;
   return activities.slice(0, index + 1).filter((a) => a.kind === kind).length;
+}
+
+/** Link-only "수업도구" editor for a single activity — students join via QR or a new tab in 발표모드. */
+function ActivityToolsEditor({ tools, onChange }: { tools: Material[]; onChange: (tools: Material[]) => void }) {
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+
+  function addTool() {
+    if (!title.trim() || !url.trim()) return;
+    onChange([...tools, { type: "link", title: title.trim(), url: url.trim() }]);
+    setTitle("");
+    setUrl("");
+  }
+
+  function removeTool(index: number) {
+    onChange(tools.filter((_, i) => i !== index));
+  }
+
+  return (
+    <div className="mt-2 rounded-md border border-dashed border-slate-200 p-2.5">
+      <p className="text-xs font-medium text-slate-500">수업도구</p>
+      {tools.length > 0 && (
+        <ul className="mt-1.5 space-y-1">
+          {tools.map((tool, index) => (
+            <li key={index} className="flex items-center justify-between gap-2 rounded bg-slate-50 px-2 py-1">
+              <span className="truncate text-xs text-slate-700">{tool.title}</span>
+              <button onClick={() => removeTool(index)} className="shrink-0 text-xs text-red-500 hover:underline">
+                삭제
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-1.5 grid grid-cols-1 gap-1.5 sm:grid-cols-[1fr_1fr_auto]">
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="도구 이름 (예: 구글 설문)"
+          className="rounded border border-slate-300 px-2 py-1 text-xs focus:border-slate-500 focus:outline-none"
+        />
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://..."
+          className="rounded border border-slate-300 px-2 py-1 text-xs focus:border-slate-500 focus:outline-none"
+        />
+        <button
+          onClick={addTool}
+          className="rounded bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-200"
+        >
+          추가
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export function ActivityEditor({
@@ -46,7 +101,13 @@ export function ActivityEditor({
   }
 
   function addRow(kind: ActivityKind) {
-    onChange(renumber([...activities, { id: generateId(), orderNo: 0, kind, title: "", content: "" }]));
+    onChange(renumber([...activities, { id: generateId(), orderNo: 0, kind, title: "", content: "", tools: [] }]));
+  }
+
+  function updateTools(index: number, tools: Material[]) {
+    const next = activities.slice();
+    next[index] = { ...next[index], tools };
+    onChange(next);
   }
 
   function removeRow(index: number) {
@@ -151,6 +212,7 @@ export function ActivityEditor({
             rows={2}
             className="mt-2 w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-slate-500 focus:outline-none"
           />
+          <ActivityToolsEditor tools={activity.tools ?? []} onChange={(tools) => updateTools(index, tools)} />
         </div>
       ))}
     </div>

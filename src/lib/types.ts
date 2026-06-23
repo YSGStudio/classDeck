@@ -16,6 +16,9 @@ export interface Activity {
   title: string;
   content: string;
   durationMinutes?: number;
+  /** Links (e.g. Google Forms, Padlet) for this activity. Shown on the activity's
+   * presentation slide with "새 창에서 열기" and "QR로 보기" so students can join. */
+  tools: Material[];
   /** @deprecated Materials now live on Lesson.materials. Kept only so normalizeLesson
    * can migrate entries from lessons saved by older versions of the app. */
   materials?: Material[];
@@ -83,6 +86,7 @@ export function normalizeLesson(raw: Lesson): Lesson {
       title: activity.title ?? "",
       content: activity.content ?? "",
       durationMinutes: activity.durationMinutes,
+      tools: activity.tools ?? [],
     })),
   };
 }
