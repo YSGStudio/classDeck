@@ -6,7 +6,7 @@ import { DirectoryGate } from "@/components/DirectoryGate";
 import { useDirectory } from "@/context/DirectoryContext";
 import { readLesson, readMaterialFile } from "@/lib/fsLessons";
 import { readStudents } from "@/lib/students";
-import { Lesson, Material, Student } from "@/lib/types";
+import { Activity, Lesson, Material, Student } from "@/lib/types";
 import { ACTIVITY_KIND_LABELS } from "@/lib/activityKinds";
 import { buildSlides } from "@/lib/presentSlides";
 import { ACCENT_CLASSES, getAccentKey } from "@/lib/presentTheme";
@@ -19,6 +19,12 @@ import "./present.css";
 
 function isPdfMaterial(material: Material): boolean {
   return material.type === "file" && material.title.toLowerCase().endsWith(".pdf");
+}
+
+/** Position of this activity among others of the same kind, for display (e.g. "활동2"). */
+function activityKindIndex(activities: Activity[], index: number): number {
+  const kind = activities[index].kind;
+  return activities.slice(0, index + 1).filter((a) => a.kind === kind).length;
 }
 
 const SWIPE_THRESHOLD = 60;
@@ -337,7 +343,9 @@ function PresentationView({ id }: { id: string }) {
               const activity = currentActivity;
               return (
                 <SlideBlock
-                  eyebrow={ACTIVITY_KIND_LABELS[activity.kind]}
+                  eyebrow={`${ACTIVITY_KIND_LABELS[activity.kind]}${
+                    activity.kind === "activity" ? activityKindIndex(activities, activityIndex) : ""
+                  }`}
                   isFullscreen={isFullscreen}
                   accentBadge={accent.badge}
                 >
@@ -409,41 +417,65 @@ function PresentationView({ id }: { id: string }) {
         )}
       </div>
 
-      <div className="relative z-10 flex items-center justify-end px-6 py-5">
-        <div className="relative">
-          {materialsMenuOpen && (
-            <ul
-              className={`absolute bottom-full right-0 mb-2 max-h-64 w-56 overflow-y-auto rounded-xl border shadow-lg ${
-                isFullscreen ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
-              }`}
-            >
-              {lesson.materials.length === 0 ? (
-                <li className={`px-3 py-2.5 text-sm ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
-                  등록된 자료가 없습니다.
-                </li>
-              ) : (
-                lesson.materials.map((material, i) => (
-                  <li key={i}>
-                    <button
-                      onClick={() => handleMaterialSelect(material)}
-                      className={`block w-full truncate px-3 py-2.5 text-left text-sm ${
-                        isFullscreen ? "text-slate-200 hover:bg-white/10" : "text-slate-700 hover:bg-slate-50"
-                      }`}
-                    >
-                      {material.title}
-                    </button>
+      <div className="relative z-10 flex items-center justify-between px-6 py-5">
+        <button
+          onClick={() => setIndex((i) => Math.max(i - 1, 0))}
+          disabled={index === 0}
+          aria-label="이전 슬라이드"
+          className={`flex items-center justify-center rounded-full shadow-sm transition disabled:opacity-30 ${
+            isFullscreen ? "h-9 w-9 text-base" : "h-7 w-7 text-xs"
+          } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
+        >
+          ‹
+        </button>
+
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            {materialsMenuOpen && (
+              <ul
+                className={`absolute bottom-full right-0 mb-2 max-h-64 w-56 overflow-y-auto rounded-xl border shadow-lg ${
+                  isFullscreen ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                }`}
+              >
+                {lesson.materials.length === 0 ? (
+                  <li className={`px-3 py-2.5 text-sm ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
+                    등록된 자료가 없습니다.
                   </li>
-                ))
-              )}
-            </ul>
-          )}
+                ) : (
+                  lesson.materials.map((material, i) => (
+                    <li key={i}>
+                      <button
+                        onClick={() => handleMaterialSelect(material)}
+                        className={`block w-full truncate px-3 py-2.5 text-left text-sm ${
+                          isFullscreen ? "text-slate-200 hover:bg-white/10" : "text-slate-700 hover:bg-slate-50"
+                        }`}
+                      >
+                        {material.title}
+                      </button>
+                    </li>
+                  ))
+                )}
+              </ul>
+            )}
+            <button
+              onClick={() => setMaterialsMenuOpen((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-full font-medium shadow-sm transition ${
+                isFullscreen ? "px-7 py-3.5 text-xl" : "px-5 py-2.5 text-sm"
+              } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
+            >
+              수업자료
+            </button>
+          </div>
+
           <button
-            onClick={() => setMaterialsMenuOpen((v) => !v)}
-            className={`flex items-center gap-1.5 rounded-full font-medium shadow-sm transition ${
-              isFullscreen ? "px-7 py-3.5 text-xl" : "px-5 py-2.5 text-sm"
+            onClick={() => setIndex((i) => Math.min(i + 1, slides.length - 1))}
+            disabled={index === slides.length - 1}
+            aria-label="다음 슬라이드"
+            className={`flex items-center justify-center rounded-full shadow-sm transition disabled:opacity-30 ${
+              isFullscreen ? "h-9 w-9 text-base" : "h-7 w-7 text-xs"
             } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
           >
-            수업자료
+            ›
           </button>
         </div>
       </div>
