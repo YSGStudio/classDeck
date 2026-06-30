@@ -78,12 +78,16 @@ function LessonRow({
   );
 }
 
+function todaySeoul(): string {
+  return new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+}
+
 function Dashboard() {
   const { directoryHandle } = useDirectory();
   const router = useRouter();
   const [lessons, setLessons] = useState<LessonSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<string | null>(() => new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState<string | null>(() => todaySeoul());
   const [searchQuery, setSearchQuery] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -156,13 +160,13 @@ function Dashboard() {
   }
 
   async function handleDuplicate(id: string) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todaySeoul();
     const newId = await copyLessonToDate(id, today, "(복제)");
     if (newId) router.push(`/lessons/${encodeURIComponent(newId)}`);
   }
 
   async function handleCopyToToday(id: string) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todaySeoul();
     await copyLessonToDate(id, today, "(복사)");
     setSelectedDate(today);
   }
