@@ -46,9 +46,7 @@ export function PresentationPicker({
     setResult(pickRandom(eligible, effectiveCount));
   }
 
-  const selectClass = `rounded border px-1 py-0.5 text-[10px] focus:outline-none ${
-    isFullscreen ? "border-slate-600 bg-transparent text-white" : "border-slate-300 text-slate-900"
-  }`;
+  const selectClass = `rounded border border-blue-900 bg-blue-900 px-1 py-0.5 text-[10px] text-white focus:outline-none`;
 
   return (
     <>
