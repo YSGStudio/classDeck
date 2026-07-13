@@ -47,6 +47,7 @@ function PresentationView({ id }: { id: string }) {
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [materialsMenuOpen, setMaterialsMenuOpen] = useState(false);
   const [pdfMaterial, setPdfMaterial] = useState<Material | null>(null);
+  const [pdfOpen, setPdfOpen] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,8 +89,8 @@ function PresentationView({ id }: { id: string }) {
         if (e.key === "Escape") setPreviewMaterial(null);
         return;
       }
-      if (pdfMaterial) {
-        if (e.key === "Escape") setPdfMaterial(null);
+      if (pdfOpen) {
+        if (e.key === "Escape") setPdfOpen(false);
         return;
       }
       if (materialsMenuOpen && e.key === "Escape") {
@@ -154,7 +155,10 @@ function PresentationView({ id }: { id: string }) {
   function handleMaterialSelect(material: Material) {
     setMaterialsMenuOpen(false);
     if (isPdfMaterial(material)) {
-      setPdfMaterial(material);
+      if (!pdfMaterial || pdfMaterial.path !== material.path) {
+        setPdfMaterial(material); // 다른 PDF면 새로 로드
+      }
+      setPdfOpen(true);
       return;
     }
     if (material.type === "file") {
@@ -173,7 +177,7 @@ function PresentationView({ id }: { id: string }) {
     const startX = dragStartX.current;
     dragStartX.current = null;
     if (startX === null) return;
-    if (qrMaterial || previewMaterial || pdfMaterial || materialsMenuOpen) return;
+    if (qrMaterial || previewMaterial || pdfOpen || materialsMenuOpen) return;
     const deltaX = e.clientX - startX;
     if (deltaX > SWIPE_THRESHOLD) {
       setIndex((i) => Math.min(i + 1, slides.length - 1));
@@ -243,23 +247,54 @@ function PresentationView({ id }: { id: string }) {
         className={`present-glow pointer-events-none absolute -bottom-32 -left-24 h-96 w-96 rounded-full ${accent.glow} opacity-10 blur-3xl`}
       />
 
-      <div className="relative z-10 flex min-h-0 flex-1 items-stretch gap-4 px-8 py-4">
-        {/* Slide panel — always visible; widgets are anchored inside it */}
-        <div className="relative min-w-0 flex-1 py-8">
-          <div className="absolute right-0 top-8 z-20 flex flex-col items-end gap-2">
-            {slide === "activity" && currentActivity && (
-              <ActivityTimer
-                key={`timer-${index}`}
-                initialMinutes={currentActivity.durationMinutes}
-                accentBar={accent.bar}
-                isFullscreen={isFullscreen}
-              />
-            )}
-            <PresentationPicker students={students} accentBar={accent.bar} isFullscreen={isFullscreen} />
+      <div
+        className={`relative z-10 flex min-h-0 flex-1 justify-start px-12 ${
+          pdfOpen ? "items-stretch py-3" : "items-start py-12"
+        }`}
+      >
+        <div className="absolute right-8 top-8 z-20 flex flex-col items-end gap-2">
+          {slide === "activity" && currentActivity && (
+            <ActivityTimer
+              key={`timer-${index}`}
+              initialMinutes={currentActivity.durationMinutes}
+              accentBar={accent.bar}
+              isFullscreen={isFullscreen}
+            />
+          )}
+          <PresentationPicker students={students} accentBar={accent.bar} isFullscreen={isFullscreen} />
+        </div>
+        {/* PDF 패널 — pdfMaterial이 설정된 동안 항상 DOM에 유지됨.
+            pdfOpen이 false일 때 hidden으로 숨기기만 해서 브라우저의 PDF 페이지 위치가 보존됨. */}
+        {pdfMaterial && (
+          <div className={`flex min-h-0 w-full flex-1 flex-col ${isFullscreen ? "pr-56" : "pr-48"} ${pdfOpen ? "" : "hidden"}`}>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className={`present-title-font truncate ${isFullscreen ? "text-2xl text-white" : "text-xl text-slate-800"}`}>
+                {pdfMaterial.title}
+              </p>
+              <button
+                onClick={() => setPdfOpen(false)}
+                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium ${
+                  isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                닫기
+              </button>
+            </div>
+            <div className={`min-h-0 flex-1 overflow-hidden rounded-xl border ${isFullscreen ? "border-slate-700 bg-slate-900/40" : "border-slate-200 bg-white"}`}>
+              {pdfBlobUrl ? (
+                <iframe src={pdfBlobUrl} title={pdfMaterial.title} className="h-full w-full" />
+              ) : (
+                <div className={`flex h-full items-center justify-center ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
+                  불러오는 중…
+                </div>
+              )}
+            </div>
           </div>
+        )}
+        {/* 슬라이드 콘텐츠 — PDF가 열려 있을 때 hidden (DOM은 유지) */}
         <div
           key={index}
-          className={`present-slide-in w-full max-w-none text-left ${isFullscreen ? "pr-56" : "pr-48"}`}
+          className={`present-slide-in w-full max-w-none text-left ${isFullscreen ? "pr-56" : "pr-48"} ${pdfOpen ? "hidden" : ""}`}
         >
           {slide === "title" && (
             <div className="text-left present-body-font">
@@ -386,35 +421,6 @@ function PresentationView({ id }: { id: string }) {
             </SlideBlock>
           )}
         </div>
-        </div>
-
-        {/* PDF panel — shown alongside slide, persists across slide navigation */}
-        {pdfMaterial && (
-          <div className={`flex shrink-0 flex-col gap-2 py-4 ${isFullscreen ? "w-[42%]" : "w-[40%]"}`}>
-            <div className="flex items-center justify-between gap-3">
-              <p className={`present-title-font truncate ${isFullscreen ? "text-2xl text-white" : "text-xl text-slate-800"}`}>
-                {pdfMaterial.title}
-              </p>
-              <button
-                onClick={() => setPdfMaterial(null)}
-                className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium ${
-                  isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
-              >
-                닫기
-              </button>
-            </div>
-            <div className={`min-h-0 flex-1 overflow-hidden rounded-xl border ${isFullscreen ? "border-slate-700 bg-slate-900/40" : "border-slate-200 bg-white"}`}>
-              {pdfBlobUrl ? (
-                <iframe src={pdfBlobUrl} title={pdfMaterial.title} className="h-full w-full" />
-              ) : (
-                <div className={`flex h-full items-center justify-center text-sm ${isFullscreen ? "text-slate-400" : "text-slate-400"}`}>
-                  불러오는 중…
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="relative z-10 flex items-center justify-between px-6 py-5">
