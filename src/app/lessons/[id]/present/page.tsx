@@ -8,6 +8,17 @@ import { readLesson, readMaterialFile } from "@/lib/fsLessons";
 import { readStudents } from "@/lib/students";
 import { Activity, Lesson, Material, Student } from "@/lib/types";
 import { ACTIVITY_KIND_LABELS } from "@/lib/activityKinds";
+import {
+  pickTextSize,
+  TITLE_TIERS,
+  STANDARD_TIERS,
+  INQUIRY_TIERS,
+  GOAL_TASK_TIERS,
+  ACTIVITY_TITLE_TIERS,
+  ACTIVITY_CONTENT_TIERS,
+  RUBRIC_CRITERIA_TIERS,
+  RUBRIC_LEVEL_TIERS,
+} from "@/lib/adaptiveText";
 import { buildSlides } from "@/lib/presentSlides";
 import { ACCENT_CLASSES, getAccentKey } from "@/lib/presentTheme";
 import { ActivityTimer } from "@/components/ActivityTimer";
@@ -233,6 +244,11 @@ function PresentationView({ id }: { id: string }) {
   const accentKey = getAccentKey(slide, currentActivity?.kind);
   const accent = ACCENT_CLASSES[accentKey];
   const progress = slides.length > 0 ? ((index + 1) / slides.length) * 100 : 0;
+  // 루브릭은 항목 수·문구 길이에 따라 한 화면에 다 들어가야 하므로 합산 길이로 크기를 정한다.
+  const rubricTextLength = lesson.rubrics.reduce(
+    (n, r) => n + r.criteria.length + r.high.length + r.mid.length + r.low.length,
+    0,
+  );
 
   function renderMaterials(materials: Material[]) {
     if (materials.length === 0) return null;
@@ -346,10 +362,14 @@ function PresentationView({ id }: { id: string }) {
                   </span>
                 ))}
               </div>
-              <h1 className={`present-title-font mt-6 ${isFullscreen ? "text-9xl" : "text-6xl"}`}>{lesson.title}</h1>
+              <h1 className={`present-title-font mt-6 ${pickTextSize(lesson.title, TITLE_TIERS, isFullscreen)}`}>{lesson.title}</h1>
               <div className={`mt-5 h-1.5 w-24 rounded-full ${accent.bar}`} />
               {lesson.achievementStandard && (
-                <p className={`mt-8 ${isFullscreen ? "text-5xl" : "text-2xl"} ${isFullscreen ? "text-slate-300" : "text-slate-600"}`}>
+                <p
+                  className={`mt-8 ${pickTextSize(lesson.achievementStandard, STANDARD_TIERS, isFullscreen)} ${
+                    isFullscreen ? "text-slate-300" : "text-slate-600"
+                  }`}
+                >
                   {lesson.achievementStandard}
                 </p>
               )}
@@ -358,7 +378,13 @@ function PresentationView({ id }: { id: string }) {
 
           {slide === "inquiry" && (
             <SlideBlock eyebrow="탐구질문" isFullscreen={isFullscreen} accentBadge={accent.badge}>
-              <p className={`present-body-font font-semibold leading-snug ${isFullscreen ? "text-8xl" : "text-5xl"}`}>
+              <p
+                className={`present-body-font font-semibold leading-snug ${pickTextSize(
+                  lesson.inquiryQuestion,
+                  INQUIRY_TIERS,
+                  isFullscreen,
+                )}`}
+              >
                 {lesson.inquiryQuestion}
               </p>
             </SlideBlock>
@@ -366,7 +392,13 @@ function PresentationView({ id }: { id: string }) {
 
           {slide === "goal" && (
             <SlideBlock eyebrow="도달목표" isFullscreen={isFullscreen} accentBadge={accent.badge}>
-              <p className={`present-body-font font-medium leading-snug ${isFullscreen ? "text-7xl" : "text-4xl"}`}>
+              <p
+                className={`present-body-font font-medium leading-snug ${pickTextSize(
+                  lesson.goal,
+                  GOAL_TASK_TIERS,
+                  isFullscreen,
+                )}`}
+              >
                 {lesson.goal}
               </p>
             </SlideBlock>
@@ -374,7 +406,13 @@ function PresentationView({ id }: { id: string }) {
 
           {slide === "task" && (
             <SlideBlock eyebrow="수행과제" isFullscreen={isFullscreen} accentBadge={accent.badge}>
-              <p className={`present-body-font font-medium leading-snug ${isFullscreen ? "text-7xl" : "text-4xl"}`}>
+              <p
+                className={`present-body-font font-medium leading-snug ${pickTextSize(
+                  lesson.task,
+                  GOAL_TASK_TIERS,
+                  isFullscreen,
+                )}`}
+              >
                 {lesson.task}
               </p>
             </SlideBlock>
@@ -392,11 +430,15 @@ function PresentationView({ id }: { id: string }) {
                   isFullscreen={isFullscreen}
                   accentBadge={accent.badge}
                 >
-                  <h2 className={`present-title-font ${isFullscreen ? "text-7xl" : "text-4xl"}`}>{activity.title}</h2>
+                  <h2 className={`present-title-font ${pickTextSize(activity.title, ACTIVITY_TITLE_TIERS, isFullscreen)}`}>
+                    {activity.title}
+                  </h2>
                   <p
-                    className={`present-body-font mt-6 whitespace-pre-wrap ${isFullscreen ? "text-5xl" : "text-2xl"} ${
-                      isFullscreen ? "text-slate-200" : "text-slate-700"
-                    }`}
+                    className={`present-body-font mt-6 whitespace-pre-wrap ${pickTextSize(
+                      activity.content,
+                      ACTIVITY_CONTENT_TIERS,
+                      isFullscreen,
+                    )} ${isFullscreen ? "text-slate-200" : "text-slate-700"}`}
                   >
                     {activity.content}
                   </p>
@@ -424,10 +466,22 @@ function PresentationView({ id }: { id: string }) {
                     key={i}
                     className={`rounded-xl border p-5 ${isFullscreen ? "border-slate-700 bg-white/5" : "border-slate-200 bg-white"}`}
                   >
-                    <p className={`present-title-font ${isFullscreen ? "text-6xl text-white" : "text-3xl text-slate-900"}`}>
+                    <p
+                      className={`present-title-font ${isFullscreen ? "text-white" : "text-slate-900"} ${pickTextSize(
+                        rubricTextLength,
+                        RUBRIC_CRITERIA_TIERS,
+                        isFullscreen,
+                      )}`}
+                    >
                       {rubric.criteria}
                     </p>
-                    <div className={`present-body-font mt-5 space-y-3 ${isFullscreen ? "text-4xl" : "text-xl"}`}>
+                    <div
+                      className={`present-body-font mt-5 space-y-3 ${pickTextSize(
+                        rubricTextLength,
+                        RUBRIC_LEVEL_TIERS,
+                        isFullscreen,
+                      )}`}
+                    >
                       {[
                         { label: "상", text: rubric.high },
                         { label: "중", text: rubric.mid },
