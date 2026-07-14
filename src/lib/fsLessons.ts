@@ -1,4 +1,4 @@
-import { Lesson, LessonSummary, normalizeLesson } from "./types";
+import { Lesson, LessonSummary, Material, normalizeLesson } from "./types";
 
 export const LESSONS_DIR = "lessons";
 export const MATERIALS_DIR = "materials";
@@ -32,6 +32,7 @@ export async function listLessons(root: FileSystemDirectoryHandle): Promise<Less
       const file = await (handle as FileSystemFileHandle).getFile();
       const text = await file.text();
       const lesson = JSON.parse(text) as Lesson;
+      const activities = lesson.activities ?? [];
       summaries.push({
         id: lesson.id,
         lessonDate: lesson.lessonDate,
@@ -39,6 +40,7 @@ export async function listLessons(root: FileSystemDirectoryHandle): Promise<Less
         subject: lesson.subject,
         grade: lesson.grade,
         achievementStandard: lesson.achievementStandard ?? "",
+        searchText: activities.map((a) => `${a.title ?? ""} ${a.content ?? ""}`).join(" "),
       });
     } catch {
       // skip unreadable/corrupt lesson files
@@ -119,4 +121,30 @@ export async function readMaterialFile(
   }
   const fileHandle = await dir.getFileHandle(parts[parts.length - 1]);
   return fileHandle.getFile();
+}
+
+/** Copies the materials array's underlying files into a new lesson's folder, so the
+ * new lesson owns independent copies instead of pointing at the original lesson's
+ * files (which would break if the original is later deleted). Link-type materials
+ * have no file and pass through unchanged. */
+export async function copyLessonMaterials(
+  root: FileSystemDirectoryHandle,
+  materials: Material[],
+  newLessonId: string,
+): Promise<Material[]> {
+  const copied: Material[] = [];
+  for (const material of materials) {
+    if (material.type === "file" && material.path) {
+      try {
+        const file = await readMaterialFile(root, material.path);
+        const newPath = await saveMaterialFile(root, [newLessonId], file);
+        copied.push({ ...material, path: newPath });
+      } catch {
+        copied.push(material);
+      }
+    } else {
+      copied.push(material);
+    }
+  }
+  return copied;
 }

@@ -9,7 +9,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { MonthCalendar } from "@/components/MonthCalendar";
 import { PresentModeLink } from "@/components/PresentModeLink";
 import { LessonSummary } from "@/lib/types";
-import { buildLessonId, deleteLesson, listLessons, readLesson, writeLesson } from "@/lib/fsLessons";
+import { buildLessonId, copyLessonMaterials, deleteLesson, listLessons, readLesson, writeLesson } from "@/lib/fsLessons";
+import { todaySeoul } from "@/lib/date";
 
 function LessonRow({
   lesson,
@@ -78,10 +79,6 @@ function LessonRow({
   );
 }
 
-function todaySeoul(): string {
-  return new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
-}
-
 function Dashboard() {
   const { directoryHandle } = useDirectory();
   const router = useRouter();
@@ -111,7 +108,9 @@ function Dashboard() {
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
-    return lessons.filter((l) => l.title.includes(q) || l.achievementStandard.includes(q));
+    return lessons.filter(
+      (l) => l.title.includes(q) || l.achievementStandard.includes(q) || l.searchText.includes(q),
+    );
   }, [lessons, searchQuery]);
 
   function updateLessonField(id: string, patch: Partial<LessonSummary>) {
@@ -146,11 +145,20 @@ function Dashboard() {
     const newTitle = `${original.title} ${suffix}`;
     const newId = buildLessonId(lessonDate, original.subject, newTitle);
     const now = new Date().toISOString();
+    const newMaterials = await copyLessonMaterials(directoryHandle, original.materials, newId);
+    const newActivities = await Promise.all(
+      original.activities.map(async (activity) => ({
+        ...activity,
+        tools: await copyLessonMaterials(directoryHandle, activity.tools, newId),
+      })),
+    );
     await writeLesson(directoryHandle, {
       ...original,
       id: newId,
       lessonDate,
       title: newTitle,
+      materials: newMaterials,
+      activities: newActivities,
       feedback: "",
       createdAt: now,
       updatedAt: now,
@@ -203,7 +211,7 @@ function Dashboard() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="제목 또는 성취기준으로 검색"
+              placeholder="제목, 성취기준, 활동 내용으로 검색"
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
             />
             {searchQuery.trim() && (

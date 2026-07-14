@@ -7,6 +7,7 @@ import { DirectoryGate } from "@/components/DirectoryGate";
 import { useDirectory } from "@/context/DirectoryContext";
 import { buildLessonId, readLesson, writeLesson } from "@/lib/fsLessons";
 import { createEmptyLesson } from "@/lib/types";
+import { todaySeoul } from "@/lib/date";
 import { clearPendingAchievementStandard, peekPendingAchievementStandard } from "@/lib/pendingAchievementStandard";
 
 const SUBJECT_OPTIONS = ["국어", "영어", "수학", "사회", "과학", "음악", "미술", "체육", "실과", "창체", "도덕"];
@@ -15,7 +16,7 @@ const GRADE_OPTIONS = ["1학년", "2학년", "3학년", "4학년", "5학년", "6
 function NewLessonForm() {
   const { directoryHandle } = useDirectory();
   const router = useRouter();
-  const [lessonDate, setLessonDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [lessonDate, setLessonDate] = useState(() => todaySeoul());
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [grade, setGrade] = useState("");

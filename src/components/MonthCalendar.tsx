@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { todaySeoul } from "@/lib/date";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -22,7 +23,7 @@ export function MonthCalendar({
     return { year: now.getFullYear(), month: now.getMonth() };
   });
 
-  const today = toDateKey(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const today = todaySeoul();
 
   const cells = useMemo(() => {
     const { year, month } = cursor;

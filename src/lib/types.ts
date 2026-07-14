@@ -67,6 +67,9 @@ export interface LessonSummary {
   subject: string;
   grade: string;
   achievementStandard: string;
+  /** Concatenated activity titles/content, so dashboard search can match on them
+   * without loading every lesson's full JSON again. */
+  searchText: string;
 }
 
 /** Fills in fields missing from lesson files saved by older versions of the app.

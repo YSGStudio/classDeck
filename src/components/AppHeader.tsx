@@ -38,7 +38,7 @@ export function AppHeader() {
   );
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="border-b border-slate-200 bg-white print:hidden">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="text-lg font-bold text-slate-900">ClassDeck</span>

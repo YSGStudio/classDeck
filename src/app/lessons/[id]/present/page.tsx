@@ -46,6 +46,7 @@ function PresentationView({ id }: { id: string }) {
   const [qrMaterial, setQrMaterial] = useState<Material | null>(null);
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null);
   const [materialsMenuOpen, setMaterialsMenuOpen] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
   const [pdfMaterial, setPdfMaterial] = useState<Material | null>(null);
   const [pdfOpen, setPdfOpen] = useState(false);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
@@ -61,6 +62,37 @@ function PresentationView({ id }: { id: string }) {
     () => (lesson ? lesson.activities.slice().sort((a, b) => a.orderNo - b.orderNo) : []),
     [lesson],
   );
+
+  /** Slide index → 목차에 보여줄 짧은 이름 (e.g. "활동2", "채점기준"). */
+  const slideLabels = useMemo(() => {
+    let activityIdx = 0;
+    return slides.map((s) => {
+      switch (s) {
+        case "title":
+          return lesson?.title || "제목";
+        case "inquiry":
+          return "탐구질문";
+        case "goal":
+          return "도달목표";
+        case "task":
+          return "수행과제";
+        case "rubrics":
+          return "채점기준";
+        case "materials":
+          return "수업 자료";
+        case "activity": {
+          const activity = activities[activityIdx];
+          const label = `${ACTIVITY_KIND_LABELS[activity.kind]}${
+            activity.kind === "activity" ? activityKindIndex(activities, activityIdx) : ""
+          }`;
+          activityIdx++;
+          return label;
+        }
+        default:
+          return "";
+      }
+    });
+  }, [slides, activities, lesson]);
 
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -97,6 +129,10 @@ function PresentationView({ id }: { id: string }) {
         setMaterialsMenuOpen(false);
         return;
       }
+      if (tocOpen && e.key === "Escape") {
+        setTocOpen(false);
+        return;
+      }
       if (e.key === "Escape") {
         // Exiting fullscreen triggers the fullscreenchange listener below, which
         // does the actual navigation back to 준비모드 — kept in one place so any
@@ -112,7 +148,7 @@ function PresentationView({ id }: { id: string }) {
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [slides.length, qrMaterial, previewMaterial, pdfMaterial, materialsMenuOpen]);
+  }, [slides.length, qrMaterial, previewMaterial, pdfOpen, materialsMenuOpen, tocOpen]);
 
   useEffect(() => {
     // There is no non-fullscreen presentation view anymore: the moment fullscreen
@@ -177,7 +213,7 @@ function PresentationView({ id }: { id: string }) {
     const startX = dragStartX.current;
     dragStartX.current = null;
     if (startX === null) return;
-    if (qrMaterial || previewMaterial || pdfOpen || materialsMenuOpen) return;
+    if (qrMaterial || previewMaterial || pdfOpen || materialsMenuOpen || tocOpen) return;
     const deltaX = e.clientX - startX;
     if (deltaX > SWIPE_THRESHOLD) {
       setIndex((i) => Math.min(i + 1, slides.length - 1));
@@ -437,6 +473,50 @@ function PresentationView({ id }: { id: string }) {
 
         <div className="flex items-center gap-2">
           <div className="relative">
+            {tocOpen && (
+              <ul
+                className={`absolute bottom-full left-0 mb-2 max-h-72 w-64 overflow-y-auto rounded-xl border shadow-lg ${
+                  isFullscreen ? "border-slate-700 bg-slate-900" : "border-slate-200 bg-white"
+                }`}
+              >
+                {slides.map((s, i) => (
+                  <li key={i}>
+                    <button
+                      onClick={() => {
+                        setIndex(i);
+                        setTocOpen(false);
+                      }}
+                      className={`flex w-full items-center gap-2 truncate px-3 py-2.5 text-left text-sm ${
+                        i === index
+                          ? isFullscreen
+                            ? "bg-white/10 text-white"
+                            : "bg-slate-100 text-slate-900"
+                          : isFullscreen
+                            ? "text-slate-200 hover:bg-white/10"
+                            : "text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      <span className={isFullscreen ? "text-slate-500" : "text-slate-400"}>{i + 1}</span>
+                      <span className="truncate">{slideLabels[i]}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <button
+              onClick={() => {
+                setTocOpen((v) => !v);
+                setMaterialsMenuOpen(false);
+              }}
+              className={`flex items-center gap-1.5 rounded-full font-medium shadow-sm transition ${
+                isFullscreen ? "px-7 py-3.5 text-xl" : "px-5 py-2.5 text-sm"
+              } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
+            >
+              목차
+            </button>
+          </div>
+
+          <div className="relative">
             {materialsMenuOpen && (
               <ul
                 className={`absolute bottom-full right-0 mb-2 max-h-64 w-56 overflow-y-auto rounded-xl border shadow-lg ${
@@ -464,7 +544,10 @@ function PresentationView({ id }: { id: string }) {
               </ul>
             )}
             <button
-              onClick={() => setMaterialsMenuOpen((v) => !v)}
+              onClick={() => {
+                setMaterialsMenuOpen((v) => !v);
+                setTocOpen(false);
+              }}
               className={`flex items-center gap-1.5 rounded-full font-medium shadow-sm transition ${
                 isFullscreen ? "px-7 py-3.5 text-xl" : "px-5 py-2.5 text-sm"
               } ${isFullscreen ? "bg-white/10 text-white hover:bg-white/20" : "bg-white text-slate-700 hover:bg-slate-50"}`}
